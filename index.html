@@ -2,10 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>גביש</title>
     <style>
         * { box-sizing: border-box; }
+
+        :root { --edge: 18px; }
 
         html, body {
             height: 100%;
@@ -16,12 +18,36 @@
             background: radial-gradient(ellipse at 50% 40%, #2a5298 0%, #1e3c72 45%, #0f1f3d 100%);
         }
 
+        /* עמודה אחת: כותרת, יהלום שממלא את האמצע, שלוש שורות כפתורים. שוליים עליונים ותחתונים שווים */
+        body {
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: calc(var(--edge) + env(safe-area-inset-top)) 12px calc(var(--edge) + env(safe-area-inset-bottom));
+        }
+
+        .top {
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .top h1 {
+            margin: 0;
+            font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+            line-height: 1.1;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 18px rgba(120, 170, 255, 0.55);
+        }
+
         #stage {
-            position: fixed;
-            inset: 0;
+            position: relative;
+            flex: 1;
+            min-height: 0;
         }
 
         #stage canvas {
+            position: absolute;
+            inset: 0;
             display: block;
             width: 100%;
             height: 100%;
@@ -31,40 +57,6 @@
 
         #stage canvas.dragging { cursor: grabbing; }
         #stage canvas.hovering { cursor: pointer; }
-
-        .top {
-            position: fixed;
-            top: 22px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .top h1 {
-            margin: 0;
-            font-size: clamp(1.4rem, 3.2vw, 2.4rem);
-            letter-spacing: 1px;
-            text-shadow: 0 2px 18px rgba(120, 170, 255, 0.55);
-        }
-
-        .top .subtitle {
-            margin-top: 4px;
-            font-size: 0.95rem;
-            color: #cfe0ff;
-        }
-
-        .top .status {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 5px 16px;
-            font-size: 0.85rem;
-            color: #ffd166;
-            background: rgba(255, 209, 102, 0.12);
-            border: 1px solid rgba(255, 209, 102, 0.35);
-            border-radius: 999px;
-        }
 
         #tip {
             position: fixed;
@@ -85,30 +77,40 @@
 
         #tip.show { opacity: 1; }
 
+        /* הכפתורים מחולקים לשלוש שורות שממלאות את כל החלק שמתחת ליהלום */
         .dock {
-            position: fixed;
-            left: 50%;
-            bottom: 20px;
-            transform: translateX(-50%);
-            z-index: 2;
+            height: 34%;
+            width: min(820px, 100%);
+            margin: 0 auto;
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dock .row {
+            flex: 1;
+            display: flex;
             justify-content: center;
             gap: 10px;
-            width: min(980px, calc(100vw - 24px));
+            min-height: 0;
         }
 
         .dock a {
+            flex: 0 1 calc((100% - 20px) / 3);
+            min-width: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
+            justify-content: center;
+            gap: 4px;
+            padding: 6px;
             color: #fff;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: clamp(0.85rem, 2.2vh, 1.1rem);
+            text-align: center;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 14px;
+            border-radius: 16px;
             backdrop-filter: blur(8px);
             transition: background 0.15s, transform 0.15s;
         }
@@ -119,11 +121,11 @@
             outline: none;
         }
 
-        .dock a .ico { font-size: 1.15rem; }
+        .dock a .ico { font-size: clamp(1.4rem, 4vh, 2.2rem); line-height: 1; }
 
         .fallback {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 40%;
             left: 0;
             right: 0;
@@ -131,27 +133,20 @@
             font-size: 1rem;
             color: #cfe0ff;
         }
-
-        @media (max-width: 600px) {
-            .dock { gap: 6px; bottom: 12px; }
-            .dock a { padding: 8px 11px; font-size: 0.8rem; }
-        }
     </style>
 </head>
 <body>
-    <div id="stage"></div>
-
     <div class="top">
         <h1>גביש 💎</h1>
-        <div class="subtitle">כל הפרויקטים במקום אחד</div>
-        <div class="status" id="status"></div>
+    </div>
+
+    <div id="stage">
+        <div class="fallback" id="fallback">לא ניתן לטעון את הגביש התלת-ממדי - אפשר להשתמש בכפתורים למטה.</div>
     </div>
 
     <div id="tip"></div>
 
     <nav class="dock" id="dock" aria-label="פרויקטים"></nav>
-
-    <div class="fallback" id="fallback">לא ניתן לטעון את הגביש התלת-ממדי - אפשר להשתמש בכפתורים למטה.</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -167,23 +162,22 @@
             { id: 'cameras', ico: '📹', label: 'מצלמות',            href: 'https://gavishori.github.io/Even/',          color: 0x7fd4ff }
         ];
 
-        // ---- סטטוס המעבר (בלי שרת - מחושב מהתאריך) ----
-        (function status() {
-            const target = new Date('2026-09-28T08:00:00+03:00');
-            const days = Math.floor(Math.abs(Date.now() - target) / 86400000);
-            document.getElementById('status').textContent = Date.now() >= target
-                ? `🎉 באבן יהודה כבר ${days} ימים`
-                : `⏳ ${days} ימים עד המעבר`;
-        })();
-
         // ---- כפתורי הפרויקטים (תמיד קיימים - גם נגישות וגם גיבוי בלי WebGL) ----
         const dock = document.getElementById('dock');
-        const dockLinks = FACETS.map(f => {
+        // שלוש שורות; השורות העליונות מקבלות את העודף (8 = 3+3+2)
+        const ROWS = 3, perRow = Math.ceil(FACETS.length / ROWS);
+        const rows = Array.from({ length: ROWS }, () => {
+            const r = document.createElement('div');
+            r.className = 'row';
+            dock.appendChild(r);
+            return r;
+        });
+        const dockLinks = FACETS.map((f, i) => {
             const a = document.createElement('a');
             a.href = f.href;
             a.style.borderColor = '#' + f.color.toString(16).padStart(6, '0') + '99';
             a.innerHTML = `<span class="ico">${f.ico}</span><span>${f.label}</span>`;
-            dock.appendChild(a);
+            rows[Math.floor(i / perRow)].appendChild(a);
             return a;
         });
 
@@ -199,14 +193,14 @@
             c.width = 1024; c.height = 512;
             const g = c.getContext('2d');
             const grad = g.createLinearGradient(0, 0, 0, 512);
-            grad.addColorStop(0, '#ffffff');
-            grad.addColorStop(0.45, '#9db8ec');
+            grad.addColorStop(0, '#e2eaf8');
+            grad.addColorStop(0.45, '#86a3d8');
             grad.addColorStop(1, '#0a1730');
             g.fillStyle = grad;
             g.fillRect(0, 0, 1024, 512);
             for (let i = 0; i < 90; i++) {
-                const bright = Math.random() < 0.6;
-                g.fillStyle = bright ? `rgba(255,255,255,${0.5 + Math.random() * 0.5})` : `rgba(8,18,44,${0.4 + Math.random() * 0.5})`;
+                const bright = Math.random() < 0.45;
+                g.fillStyle = bright ? `rgba(255,255,255,${0.35 + Math.random() * 0.45})` : `rgba(8,18,44,${0.4 + Math.random() * 0.5})`;
                 const x = Math.random() * 1024, y = Math.random() * 512;
                 const w = 20 + Math.random() * 120, h = 8 + Math.random() * 60;
                 g.save();
@@ -258,15 +252,14 @@
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
             camera.position.set(0, 1.6, 11);
-            camera.lookAt(0, -0.2, 0);
 
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             stage.appendChild(renderer.domElement);
             scene.environment = makeEnvironment(renderer);
 
-            scene.add(new THREE.AmbientLight(0xaac0ff, 0.5));
-            const key = new THREE.DirectionalLight(0xffffff, 1.0);
+            scene.add(new THREE.AmbientLight(0xaac0ff, 0.35));
+            const key = new THREE.DirectionalLight(0xffffff, 0.7);
             key.position.set(4, 8, 6);
             scene.add(key);
             const rim = new THREE.PointLight(0x88aaff, 1.2, 30);
@@ -281,13 +274,13 @@
 
             FACETS.forEach((f, k) => {
                 const geo = sectorGeometry(k, N, R, 0.95, 2.1);
-                const tint = new THREE.Color(f.color).lerp(white, 0.62);
+                const tint = new THREE.Color(f.color).lerp(white, 0.55);
                 const mat = new THREE.MeshStandardMaterial({
                     color: tint,
                     metalness: 1,
                     roughness: 0.07,
                     flatShading: true,
-                    envMapIntensity: 1.35,
+                    envMapIntensity: 1.05,
                     emissive: new THREE.Color(f.color),
                     emissiveIntensity: 0.05,
                     side: THREE.DoubleSide
@@ -297,7 +290,7 @@
                 gem.add(mesh);
                 gem.add(new THREE.LineSegments(
                     new THREE.EdgesGeometry(geo, 12),
-                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 })
                 ));
                 sectors.push(mesh);
             });
@@ -322,10 +315,14 @@
             gem.rotation.x = 0.28;
 
             function resize() {
-                const w = window.innerWidth, h = window.innerHeight;
+                const w = stage.clientWidth, h = stage.clientHeight;
                 renderer.setSize(w, h, false);
                 camera.aspect = w / h;
-                camera.position.z = w < 700 ? 15 : 11;
+                // המרחק שבו היהלום ממלא את האזור שלו: ~94% מהרוחב או ~88% מהגובה, הקטן מביניהם
+                const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+                const dist = Math.max(2.45 / (0.96 * tanV * camera.aspect), 1.75 / (0.88 * tanV));
+                camera.position.set(0, dist * 0.15, dist);
+                camera.lookAt(0, -0.2, 0);
                 camera.updateProjectionMatrix();
             }
             window.addEventListener('resize', resize);
