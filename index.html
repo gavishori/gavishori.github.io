@@ -175,6 +175,8 @@
         const dockLinks = FACETS.map((f, i) => {
             const a = document.createElement('a');
             a.href = f.href;
+            a.target = '_blank';
+            a.rel = 'noopener';
             a.style.borderColor = '#' + f.color.toString(16).padStart(6, '0') + '99';
             a.innerHTML = `<span class="ico">${f.ico}</span><span>${f.label}</span>`;
             rows[Math.floor(i / perRow)].appendChild(a);
@@ -377,7 +379,7 @@
                 canvas.classList.remove('dragging');
                 if (moved < 6) {
                     const idx = pick(e);
-                    if (idx >= 0) window.location.href = FACETS[idx].href;
+                    if (idx >= 0) window.open(FACETS[idx].href, '_blank', 'noopener');
                 } else if (!reduceMotion) {
                     velY = Math.max(-0.02, Math.min(0.02, velY)) || 0.0035;
                 }
